@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Live Arena</title>
+</head>
+<body>
+  <h2>Live Builds</h2>
+  <div id="output"></div>
+
+  <script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbyoFqr5hafURVxfth65zYI-G64Uo1VtBHGgzd9YVUtxvhuhVdLlDCR-riJnAG4l0vyD/exec";
+
+  async function refresh() {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+
+    let html = "<table border='1' cellpadding='5'><tr><th>Round</th><th>Team</th><th>Selections</th><th>Power</th></tr>";
+    data.slice(-10).forEach(row=>{
+      html += `<tr>
+        <td>${row.round}</td>
+        <td>${row.team}</td>
+        <td>${row.selections}</td>
+        <td>${row.power}</td>
+      </tr>`;
+    });
+    html += "</table>";
+
+    document.getElementById("output").innerHTML = html;
+  }
+
+  setInterval(refresh, 5000); // update every 5s
+  refresh();
+  </script>
+</body>
+</html>

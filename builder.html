@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>SynBio Builder</title>
+</head>
+<body>
+  <h2>Team Build</h2>
+  <label>Team Name: <input id="team"></label><br>
+  <label>Round: <input id="round" type="number" value="1"></label>
+
+  <h3>Select Options</h3>
+  <div id="options"></div>
+
+  <button onclick="submitBuild()">Submit Build</button>
+
+  <script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbyoFqr5hafURVxfth65zYI-G64Uo1VtBHGgzd9YVUtxvhuhVdLlDCR-riJnAG4l0vyD/exec";
+
+  const options = [
+    {name:"Protein Designer", cost:2, eff:2},
+    {name:"CRISPR Optimizer", cost:2, eff:2},
+    {name:"Pathway Simulator", cost:3, eff:3},
+    {name:"Lab Automation Robot", cost:3, eff:3},
+    {name:"E. coli", cost:1, eff:1},
+    {name:"Bacillus Spores", cost:2, eff:2},
+    {name:"Viral Vector", cost:3, eff:3},
+    {name:"Yeast/Algae", cost:2, eff:2},
+    {name:"Resistance", cost:3, eff:3},
+    {name:"Persistence", cost:2, eff:2},
+    {name:"Stealth", cost:3, eff:3},
+    {name:"Weaponization", cost:4, eff:4}
+  ];
+
+  let selections = [];
+
+  const optDiv = document.getElementById("options");
+  options.forEach((o,i)=>{
+    let b = document.createElement("button");
+    b.innerText = `${o.name} (Cost ${o.cost}, Eff ${o.eff})`;
+    b.onclick=()=>{
+      if(selections.includes(i)) {
+        selections = selections.filter(x=>x!==i);
+        b.style.background="";
+      } else {
+        selections.push(i);
+        b.style.background="#cde9cd";
+      }
+    };
+    optDiv.appendChild(b);
+    optDiv.appendChild(document.createElement("br"));
+  });
+
+  async function submitBuild() {
+    const team = document.getElementById("team").value;
+    const round = document.getElementById("round").value;
+    const picked = selections.map(i=>options[i].name);
+    const power = selections.map(i=>options[i].eff).reduce((a,b)=>a+b,0);
+
+    const payload = {
+      round: round,
+      team: team,
+      selections: picked,
+      power: power
+    };
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    alert("Build submitted!");
+  }
+  </script>
+</body>
+</html>
