@@ -3,73 +3,146 @@
 <head>
   <meta charset="UTF-8">
   <title>SynBio Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{font-family:system-ui,Arial;margin:20px;max-width:900px}
+    .box{border:1px solid #ddd;border-radius:10px;padding:14px;margin:14px 0}
+    h2{margin:6px 0}
+    .opts button{margin:4px;padding:8px 10px;border-radius:8px;border:1px solid #ccc;background:#f7f7f7;cursor:pointer}
+    .opts button.sel{background:#cde9cd;border-color:#8dc28d}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .pill{padding:4px 8px;border-radius:999px;background:#eee;margin-left:8px}
+    .bar{display:flex;gap:8px;align-items:center}
+    .timer{font-weight:700}
+  </style>
 </head>
 <body>
-  <h2>Team Build</h2>
-  <label>Team Name: <input id="team"></label><br>
-  <label>Round: <input id="round" type="number" value="1"></label>
+  <h1>SynBio Wargame — Team Builder</h1>
 
-  <h3>Select Options</h3>
-  <div id="options"></div>
+  <div class="bar">
+    <label>Team: <input id="team" placeholder="Red or Blue"></label>
+    <label>Round: <input id="round" type="number" value="1" min="1" style="width:80px"></label>
+    <button id="check" onclick="checkRound()">Check Round Status</button>
+    <span id="status"></span>
+  </div>
 
-  <button onclick="submitBuild()">Submit Build</button>
+  <div id="deadlineBox" class="box" style="display:none">
+    <b>Counter Window:</b> <span id="countdown" class="timer">--:--</span>
+  </div>
 
-  <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbyoFqr5hafURVxfth65zYI-G64Uo1VtBHGgzd9YVUtxvhuhVdLlDCR-riJnAG4l0vyD/exec";
+  <div class="box">
+    <h2>Threat Build <span class="pill">one per team/round</span></h2>
+    <div class="opts" id="threatOpts"></div>
+    <div class="bar">
+      <button onclick="submitBuild('THREAT')">Submit Threat</button>
+      <span>Power: <b id="threatPower">0</b></span>
+    </div>
+  </div>
 
-  const options = [
-    {name:"Protein Designer", cost:2, eff:2},
-    {name:"CRISPR Optimizer", cost:2, eff:2},
-    {name:"Pathway Simulator", cost:3, eff:3},
-    {name:"Lab Automation Robot", cost:3, eff:3},
-    {name:"E. coli", cost:1, eff:1},
-    {name:"Bacillus Spores", cost:2, eff:2},
-    {name:"Viral Vector", cost:3, eff:3},
-    {name:"Yeast/Algae", cost:2, eff:2},
-    {name:"Resistance", cost:3, eff:3},
-    {name:"Persistence", cost:2, eff:2},
-    {name:"Stealth", cost:3, eff:3},
-    {name:"Weaponization", cost:4, eff:4}
-  ];
+  <div class="box">
+    <h2>Counter Build <span class="pill">one per team/round</span></h2>
+    <div class="opts" id="counterOpts"></div>
+    <div class="bar">
+      <button onclick="submitBuild('COUNTER')">Submit Counter</button>
+      <span>Power: <b id="counterPower">0</b></span>
+    </div>
+  </div>
 
-  let selections = [];
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwfPOWvv06KYr6-ZoIkD4MYrt4Acyn_ckW_TJtCN4miY1KNJTKv6W3Gz77s5I2qj8d6/exec";
 
-  const optDiv = document.getElementById("options");
-  options.forEach((o,i)=>{
-    let b = document.createElement("button");
-    b.innerText = `${o.name} (Cost ${o.cost}, Eff ${o.eff})`;
+const options = [
+  {name:"Protein Designer", cost:2, eff:2},
+  {name:"CRISPR Optimizer", cost:2, eff:2},
+  {name:"Pathway Simulator", cost:3, eff:3},
+  {name:"Lab Automation Robot", cost:3, eff:3},
+  {name:"E. coli", cost:1, eff:1},
+  {name:"Bacillus Spores", cost:2, eff:2},
+  {name:"Viral Vector", cost:3, eff:3},
+  {name:"Yeast/Algae", cost:2, eff:2},
+  {name:"Resistance", cost:3, eff:3},
+  {name:"Persistence", cost:2, eff:2},
+  {name:"Stealth", cost:3, eff:3},
+  {name:"Weaponization", cost:4, eff:4}
+];
+
+let selThreat = new Set();
+let selCounter = new Set();
+let timerId = null;
+
+function renderOptions(containerId, setRef, powerId){
+  const box = document.getElementById(containerId);
+  box.innerHTML = "";
+  options.forEach((o, i)=>{
+    const b=document.createElement("button");
+    b.textContent = `${o.name} (Cost ${o.cost}, Eff ${o.eff})`;
     b.onclick=()=>{
-      if(selections.includes(i)) {
-        selections = selections.filter(x=>x!==i);
-        b.style.background="";
-      } else {
-        selections.push(i);
-        b.style.background="#cde9cd";
-      }
+      if(setRef.has(i)) setRef.delete(i); else setRef.add(i);
+      b.classList.toggle("sel");
+      document.getElementById(powerId).textContent = [...setRef].map(j=>options[j].eff).reduce((a,b)=>a+b,0);
     };
-    optDiv.appendChild(b);
-    optDiv.appendChild(document.createElement("br"));
+    box.appendChild(b);
   });
+}
+renderOptions("threatOpts", selThreat, "threatPower");
+renderOptions("counterOpts", selCounter, "counterPower");
 
-  async function submitBuild() {
-    const team = document.getElementById("team").value;
-    const round = document.getElementById("round").value;
-    const picked = selections.map(i=>options[i].name);
-    const power = selections.map(i=>options[i].eff).reduce((a,b)=>a+b,0);
+async function submitBuild(kind){
+  const team = document.getElementById("team").value.trim();
+  const round = document.getElementById("round").value.trim();
+  if(!team || !round) { alert("Enter Team and Round"); return; }
 
-    const payload = {
-      round: round,
-      team: team,
-      selections: picked,
-      power: power
-    };
+  const setRef = kind==="THREAT" ? selThreat : selCounter;
+  const picks = [...setRef].map(i=>options[i].name);
+  const power = [...setRef].map(i=>options[i].eff).reduce((a,b)=>a+b,0);
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
-    alert("Build submitted!");
+  const payload = { action:"submit", round, team, kind, selections:picks, power };
+  const res = await fetch(API_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(payload)
+  });
+  alert(`${kind} submitted for Round ${round}`);
+  checkRound(); // refresh status
+}
+
+async function checkRound(){
+  const round = document.getElementById("round").value.trim();
+  if(!round) return;
+  try{
+    const res = await fetch(`${API_URL}?round=${encodeURIComponent(round)}`);
+    const data = await res.json();
+    document.getElementById("status").textContent =
+      `Status: ${data.status} | Threat by: ${data.threat?.team || '—'} | Counter by: ${data.counter?.team || '—'}`;
+
+    if(data.remainingSeconds != null){
+      document.getElementById("deadlineBox").style.display = "block";
+      startCountdown(data.remainingSeconds);
+    } else {
+      document.getElementById("deadlineBox").style.display = "none";
+      stopCountdown();
+    }
+  }catch(e){
+    document.getElementById("status").textContent = "Unable to fetch round status.";
   }
-  </script>
+}
+
+function startCountdown(sec){
+  stopCountdown();
+  updateCountdown(sec);
+  timerId = setInterval(()=> {
+    sec = Math.max(0, sec-1);
+    updateCountdown(sec);
+    if(sec===0) stopCountdown();
+  }, 1000);
+}
+function stopCountdown(){ if(timerId){ clearInterval(timerId); timerId=null; } }
+function updateCountdown(s){
+  const m = String(Math.floor(s/60)).padStart(2,'0');
+  const ss = String(s%60).padStart(2,'0');
+  document.getElementById("countdown").textContent = `${m}:${ss}`;
+}
+</script>
 </body>
 </html>

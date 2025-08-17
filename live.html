@@ -3,34 +3,83 @@
 <head>
   <meta charset="UTF-8">
   <title>Live Arena</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{font-family:system-ui,Arial;margin:20px;max-width:900px}
+    .box{border:1px solid #ddd;border-radius:10px;padding:14px;margin:14px 0}
+    .cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .timer{font-size:20px;font-weight:800}
+    .tag{display:inline-block;background:#eef;padding:4px 8px;border-radius:999px;margin-left:8px}
+  </style>
 </head>
 <body>
-  <h2>Live Builds</h2>
-  <div id="output"></div>
+  <h1>SynBio Wargame — Live Arena</h1>
+  <div class="box">
+    <label>Round:
+      <input id="round" type="number" value="1" min="1" style="width:80px">
+    </label>
+    <button onclick="refresh()">Refresh</button>
+    <span>Counter Window: <span id="countdown" class="timer">--:--</span></span>
+    <div id="status"></div>
+  </div>
 
-  <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbyoFqr5hafURVxfth65zYI-G64Uo1VtBHGgzd9YVUtxvhuhVdLlDCR-riJnAG4l0vyD/exec";
+  <div class="cols">
+    <div class="box">
+      <h2>Threat Build <span class="tag" id="threatTeam">—</span></h2>
+      <div id="threatSelections">—</div>
+      <div>Power: <b id="threatPower">—</b></div>
+    </div>
+    <div class="box">
+      <h2>Counter Build <span class="tag" id="counterTeam">—</span></h2>
+      <div id="counterSelections">—</div>
+      <div>Power: <b id="counterPower">—</b></div>
+    </div>
+  </div>
 
-  async function refresh() {
-    const res = await fetch(API_URL);
-    const data = await res.json();
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwfPOWvv06KYr6-ZoIkD4MYrt4Acyn_ckW_TJtCN4miY1KNJTKv6W3Gz77s5I2qj8d6/exec";
+let tId=null;
 
-    let html = "<table border='1' cellpadding='5'><tr><th>Round</th><th>Team</th><th>Selections</th><th>Power</th></tr>";
-    data.slice(-10).forEach(row=>{
-      html += `<tr>
-        <td>${row.round}</td>
-        <td>${row.team}</td>
-        <td>${row.selections}</td>
-        <td>${row.power}</td>
-      </tr>`;
-    });
-    html += "</table>";
+async function refresh(){
+  const round = document.getElementById("round").value;
+  const res = await fetch(`${API_URL}?round=${encodeURIComponent(round)}`);
+  const data = await res.json();
 
-    document.getElementById("output").innerHTML = html;
+  document.getElementById("status").textContent = `Status: ${data.status || '—'}`;
+  document.getElementById("threatTeam").textContent   = data.threat?.team || "—";
+  document.getElementById("threatSelections").textContent = data.threat?.selections || "—";
+  document.getElementById("threatPower").textContent  = data.threat?.power || "—";
+
+  document.getElementById("counterTeam").textContent  = data.counter?.team || "—";
+  document.getElementById("counterSelections").textContent = data.counter?.selections || "—";
+  document.getElementById("counterPower").textContent = data.counter?.power || "—";
+
+  if (typeof data.remainingSeconds === "number") {
+    startCountdown(data.remainingSeconds);
+  } else {
+    stopCountdown();
+    document.getElementById("countdown").textContent = "--:--";
   }
+}
 
-  setInterval(refresh, 5000); // update every 5s
-  refresh();
-  </script>
+function startCountdown(sec){
+  stopCountdown();
+  updateCountdown(sec);
+  tId = setInterval(()=> {
+    sec = Math.max(0, sec-1);
+    updateCountdown(sec);
+    if(sec===0) stopCountdown();
+  },1000);
+}
+function updateCountdown(s){
+  const m = String(Math.floor(s/60)).padStart(2,'0');
+  const ss = String(s%60).padStart(2,'0');
+  document.getElementById("countdown").textContent = `${m}:${ss}`;
+}
+function stopCountdown(){ if(tId){ clearInterval(tId); tId=null; } }
+
+setInterval(refresh, 5000);
+refresh();
+</script>
 </body>
 </html>
