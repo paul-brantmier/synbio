@@ -51,7 +51,9 @@
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbwfPOWvv06KYr6-ZoIkD4MYrt4Acyn_ckW_TJtCN4miY1KNJTKv6W3Gz77s5I2qj8d6/exec";
 
-const options = [
+
+/* ---------------- THREAT OPTIONS ---------------- */
+const threatOptions = [
   {name:"Protein Designer", cost:2, eff:2},
   {name:"CRISPR Optimizer", cost:2, eff:2},
   {name:"Pathway Simulator", cost:3, eff:3},
@@ -66,38 +68,69 @@ const options = [
   {name:"Weaponization", cost:4, eff:4}
 ];
 
+/* ---------------- COUNTER OPTIONS ---------------- */
+const counterOptions = [
+  // Detection
+  {name:"Rapid PCR Assay", cost:2, eff:2},
+  {name:"Environmental Biosensors", cost:3, eff:3},
+  {name:"Metagenomic Sequencing", cost:4, eff:4},
+
+  // Medical
+  {name:"Antiviral/Antibiotic Stockpile", cost:3, eff:3},
+  {name:"Monoclonal Antibody Therapy", cost:4, eff:4},
+  {name:"Prophylactic Vaccine Development", cost:5, eff:5},
+
+  // Decon
+  {name:"Standard Chlorine Wash", cost:1, eff:1},
+  {name:"UV / Heat Treatment", cost:2, eff:2},
+  {name:"AI-Designed Enzymatic Decon", cost:3, eff:3},
+
+  // Ops / Protection
+  {name:"Upgraded PPE", cost:2, eff:2},
+  {name:"Improved Ventilation/Filtration", cost:2, eff:2},
+  {name:"Strategic Stockpile Logistics", cost:3, eff:3},
+
+  // Intel / Policy
+  {name:"Rapid Intel Fusion Cell", cost:3, eff:3},
+  {name:"International Health Reporting", cost:2, eff:2},
+  {name:"Public Risk Communication", cost:2, eff:2}
+];
+
 let selThreat = new Set();
 let selCounter = new Set();
 let timerId = null;
 
-function renderOptions(containerId, setRef, powerId){
+/* ----------- RENDERING ----------- */
+function renderOptions(containerId, setRef, powerId, opts){
   const box = document.getElementById(containerId);
   box.innerHTML = "";
-  options.forEach((o, i)=>{
+  opts.forEach((o, i)=>{
     const b=document.createElement("button");
     b.textContent = `${o.name} (Cost ${o.cost}, Eff ${o.eff})`;
     b.onclick=()=>{
       if(setRef.has(i)) setRef.delete(i); else setRef.add(i);
       b.classList.toggle("sel");
-      document.getElementById(powerId).textContent = [...setRef].map(j=>options[j].eff).reduce((a,b)=>a+b,0);
+      document.getElementById(powerId).textContent = [...setRef].map(j=>opts[j].eff).reduce((a,b)=>a+b,0);
     };
     box.appendChild(b);
   });
 }
-renderOptions("threatOpts", selThreat, "threatPower");
-renderOptions("counterOpts", selCounter, "counterPower");
+renderOptions("threatOpts", selThreat, "threatPower", threatOptions);
+renderOptions("counterOpts", selCounter, "counterPower", counterOptions);
 
+/* ----------- SUBMISSION ----------- */
 async function submitBuild(kind){
   const team = document.getElementById("team").value.trim();
   const round = document.getElementById("round").value.trim();
   if(!team || !round) { alert("Enter Team and Round"); return; }
 
-  const setRef = kind==="THREAT" ? selThreat : selCounter;
-  const picks = [...setRef].map(i=>options[i].name);
-  const power = [...setRef].map(i=>options[i].eff).reduce((a,b)=>a+b,0);
+  const opts = (kind==="THREAT") ? threatOptions : counterOptions;
+  const setRef = (kind==="THREAT") ? selThreat : selCounter;
+  const picks = [...setRef].map(i=>opts[i].name);
+  const power = [...setRef].map(i=>opts[i].eff).reduce((a,b)=>a+b,0);
 
   const payload = { action:"submit", round, team, kind, selections:picks, power };
-  const res = await fetch(API_URL, {
+  await fetch(API_URL, {
     method: "POST",
     mode: "no-cors",
     headers: {"Content-Type":"application/json"},
@@ -107,6 +140,7 @@ async function submitBuild(kind){
   checkRound(); // refresh status
 }
 
+/* ----------- ROUND STATUS ----------- */
 async function checkRound(){
   const round = document.getElementById("round").value.trim();
   if(!round) return;
@@ -144,5 +178,6 @@ function updateCountdown(s){
   document.getElementById("countdown").textContent = `${m}:${ss}`;
 }
 </script>
+
 </body>
 </html>
