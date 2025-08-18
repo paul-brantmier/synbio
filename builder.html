@@ -130,6 +130,7 @@ async function submitBuild(kind){
   const power = [...setRef].map(i=>opts[i].eff).reduce((a,b)=>a+b,0);
 
   const payload = { action:"submit", round, team, kind, selections:picks, power };
+  console.log("Submitting payload:", payload);
   await fetch(API_URL, {
     method: "POST",
     mode: "no-cors",
@@ -181,3 +182,4 @@ function updateCountdown(s){
 
 </body>
 </html>
+
