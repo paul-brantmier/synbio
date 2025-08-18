@@ -38,6 +38,7 @@
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbyhsoxL2cRRhoyK4vgXSZt6oX_HunwrCsVTxLqAcEPbEHI86Z0NRmEVcn69knVTmcfI/exec";
+
 let tId=null;
 
 async function refresh(){
@@ -45,21 +46,24 @@ async function refresh(){
   const res = await fetch(`${API_URL}?round=${encodeURIComponent(round)}`);
   const data = await res.json();
 
-  document.getElementById("status").textContent = `Status: ${data.status || '—'}`;
-  document.getElementById("threatTeam").textContent   = data.threat?.team || "—";
-  document.getElementById("threatSelections").textContent = data.threat?.selections || "—";
-  document.getElementById("threatPower").textContent  = data.threat?.power || "—";
+  // Status + timer
+  document.getElementById("status").textContent = `Status: ${data.status || '—'}  |  Winner: ${data.score?.winner ?? '—'}  |  Margin: ${data.score?.margin ?? '—'}`;
+  if (typeof data.remainingSeconds === "number") startCountdown(data.remainingSeconds);
+  else { stopCountdown(); document.getElementById("countdown").textContent = "--:--"; }
 
-  document.getElementById("counterTeam").textContent  = data.counter?.team || "—";
-  document.getElementById("counterSelections").textContent = data.counter?.selections || "—";
-  document.getElementById("counterPower").textContent = data.counter?.power || "—";
+  // Threat
+  document.getElementById("threatTeam").textContent          = data.threat?.team || "—";
+  document.getElementById("threatSelections").textContent    = data.threat?.selections || "—";
+  document.getElementById("threatPower").textContent         = data.score?.threatPower ?? data.threat?.power ?? "—";
 
-  if (typeof data.remainingSeconds === "number") {
-    startCountdown(data.remainingSeconds);
-  } else {
-    stopCountdown();
-    document.getElementById("countdown").textContent = "--:--";
-  }
+  // Counter
+  document.getElementById("counterTeam").textContent         = data.counter?.team || "—";
+  document.getElementById("counterSelections").textContent   = data.counter?.selections || "—";
+  // show base + bonus breakdown if available
+  const base  = data.score?.counterBase;
+  const bonus = data.score?.counterBonus;
+  const fin   = data.score?.counterFinal ?? data.counter?.power ?? "—";
+  document.getElementById("counterPower").textContent = (base!=null && bonus!=null) ? `${fin} (base ${base} + bonus ${bonus})` : fin;
 }
 
 function startCountdown(sec){
@@ -81,5 +85,6 @@ function stopCountdown(){ if(tId){ clearInterval(tId); tId=null; } }
 setInterval(refresh, 5000);
 refresh();
 </script>
+
 </body>
 </html>
