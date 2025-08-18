@@ -119,27 +119,46 @@ renderOptions("threatOpts", selThreat, "threatPower", threatOptions);
 renderOptions("counterOpts", selCounter, "counterPower", counterOptions);
 
 /* ----------- SUBMISSION ----------- */
+
 async function submitBuild(kind){
-  const team = document.getElementById("team").value.trim();
+  const team  = document.getElementById("team").value.trim();
   const round = document.getElementById("round").value.trim();
-  if(!team || !round) { alert("Enter Team and Round"); return; }
 
-  const opts = (kind==="THREAT") ? threatOptions : counterOptions;
-  const setRef = (kind==="THREAT") ? selThreat : selCounter;
-  const picks = [...setRef].map(i=>opts[i].name);
-  const power = [...setRef].map(i=>opts[i].eff).reduce((a,b)=>a+b,0);
+  const opts   = (kind==="THREAT") ? threatOptions : counterOptions;
+  const setRef = (kind==="THREAT") ? selThreat    : selCounter;
 
-  const payload = { action:"submit", round, team, kind, selections:picks, power };
+  const picks = [...setRef].map(i => opts[i].name);
+  const power = [...setRef].map(i => opts[i].eff).reduce((a,b)=>a+b,0);
+
+  const payload = {
+    action: "submit",
+    round,
+    team,
+    kind,
+    selections: picks,
+    power
+  };
+
   console.log("Submitting payload:", payload);
-  await fetch(API_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify(payload)
-  });
-  alert(`${kind} submitted for Round ${round}`);
-  checkRound(); // refresh status
+
+  try {
+    // Send as form-encoded to bypass CORS
+    const resp = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "data=" + encodeURIComponent(JSON.stringify(payload))
+    });
+
+    const text = await resp.text();
+    console.log("Server responded:", text);
+
+    alert(`${kind} build submitted!`);
+  } catch (err) {
+    console.error("Submission failed", err);
+    alert("Error submitting build. Check console for details.");
+  }
 }
+
 
 /* ----------- ROUND STATUS ----------- */
 async function checkRound(){
@@ -182,4 +201,5 @@ function updateCountdown(s){
 
 </body>
 </html>
+
 
