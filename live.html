@@ -35,6 +35,7 @@
       <div>Power: <b id="counterPower">—</b></div>
     </div>
   </div>
+<div id="explanation">—</div>
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbyhsoxL2cRRhoyK4vgXSZt6oX_HunwrCsVTxLqAcEPbEHI86Z0NRmEVcn69knVTmcfI/exec";
@@ -64,6 +65,12 @@ async function refresh(){
   const bonus = data.score?.counterBonus;
   const fin   = data.score?.counterFinal ?? data.counter?.power ?? "—";
   document.getElementById("counterPower").textContent = (base!=null && bonus!=null) ? `${fin} (base ${base} + bonus ${bonus})` : fin;
+  document.getElementById("explanation").textContent = data.score?.explanation || "—";
+  const llmR = data.score?.llm;
+  if (llmR && llmR.reason) {
+    document.getElementById("explanation").textContent += `\n\nLLM note: ${llmR.reason} (adj ${llmR.adjustment || 0})`;
+  }
+
 }
 
 function startCountdown(sec){
@@ -88,3 +95,4 @@ refresh();
 
 </body>
 </html>
+
