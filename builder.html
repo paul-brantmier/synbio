@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>SynBio Builder</title>
+  <title>SynBio Builder (v2)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     :root{
@@ -17,7 +17,6 @@
     .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .bar input{padding:6px 8px;border:1px solid var(--border);border-radius:8px}
     .timer{font-weight:700}
-    /* Option list */
     .opts{display:grid;grid-template-columns:1fr;gap:8px}
     @media (min-width:720px){ .opts{grid-template-columns:1fr 1fr} }
     details.opt{border:1px solid var(--border);border-radius:10px;background:#fff}
@@ -32,10 +31,11 @@
     .btn.primary{background:#e8f5e9;border-color:#c5e1c5;color:#1b5e20}
     .btn.primary.sel{background:#cde9cd;border-color:#8dc28d}
     .small{font-size:12px;color:var(--muted)}
+    .totals{margin-left:auto;font-weight:600}
   </style>
 </head>
 <body>
-  <h1>SynBio Wargame — Team Builder</h1>
+  <h1>SynBio Wargame — Team Builder <span class="pill">v2</span></h1>
 
   <div class="bar box" style="background:#fff">
     <label>Team: <input id="team" placeholder="Red or Blue"></label>
@@ -54,7 +54,7 @@
     <div class="opts" id="threatOpts"></div>
     <div class="bar" style="margin-top:8px">
       <button class="btn primary" onclick="submitBuild('THREAT')">Submit Threat</button>
-      <span>Power: <b id="threatPower">0</b></span>
+      <span class="totals">Power: <b id="threatPower">0</b> | Cost: <b id="threatCost">0</b></span>
     </div>
   </div>
 
@@ -64,58 +64,55 @@
     <div class="opts" id="counterOpts"></div>
     <div class="bar" style="margin-top:8px">
       <button class="btn primary" onclick="submitBuild('COUNTER')">Submit Counter</button>
-      <span>Power: <b id="counterPower">0</b></span>
+      <span class="totals">Power: <b id="counterPower">0</b> | Cost: <b id="counterCost">0</b></span>
     </div>
   </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbyhsoxL2cRRhoyK4vgXSZt6oX_HunwrCsVTxLqAcEPbEHI86Z0NRmEVcn69knVTmcfI/exec";
+// >>>> IMPORTANT: replace with your deployed Web App URL
+const API_URL = "YOUR_WEB_APP_URL_HERE";
 
-/* ---------------- THREAT OPTIONS (with explanations) ---------------- */
+/* THREAT and COUNTER options omitted here for brevity—use the exact arrays from my message or your current file.
+   They include name, cost, eff, desc entries. (Same as before, with descriptions.) */
+
 const threatOptions = [
-  {name:"Protein Designer", cost:2, eff:2, desc:"Designs novel proteins that may alter host interaction or stability; increases adaptability and can complicate countermeasure targeting."},
-  {name:"CRISPR Optimizer", cost:2, eff:2, desc:"Accelerates genome edits to tune traits (e.g., fitness, evasion). Raises adaptability pressure for defenders."},
-  {name:"Pathway Simulator", cost:3, eff:3, desc:"Computationally explores metabolic/host pathway effects to maximize impact or persistence."},
-  {name:"Lab Automation Robot", cost:3, eff:3, desc:"Scales build/test throughput and consistency; shortens iteration cycles."},
-  {name:"E. coli", cost:1, eff:1, desc:"Common engineering chassis; easy to culture and test; low baseline robustness."},
-  {name:"Bacillus Spores", cost:2, eff:2, desc:"Spore state improves environmental hardiness and longevity."},
-  {name:"Viral Vector", cost:3, eff:3, desc:"Delivery platform that can increase efficiency of genetic material transfer."},
-  {name:"Yeast/Algae", cost:2, eff:2, desc:"Alternative chassis with environmental reservoirs and distinct growth niches."},
-  {name:"Resistance", cost:3, eff:3, desc:"Traits that lessen susceptibility to medical or decon measures."},
-  {name:"Persistence", cost:2, eff:2, desc:"Traits that favor survival or environmental stability over time."},
-  {name:"Stealth", cost:3, eff:3, desc:"Reduces detection likelihood or delays diagnostic signal."},
-  {name:"Weaponization", cost:4, eff:4, desc:"Aligns multiple features to increase overall impact and operational effectiveness."}
+  {name:"Protein Designer", cost:2, eff:2, desc:"Designs novel proteins..."},
+  {name:"CRISPR Optimizer", cost:2, eff:2, desc:"Accelerates genome edits..."},
+  {name:"Pathway Simulator", cost:3, eff:3, desc:"Computationally explores..."},
+  {name:"Lab Automation Robot", cost:3, eff:3, desc:"Scales build/test..."},
+  {name:"E. coli", cost:1, eff:1, desc:"Common engineering chassis..."},
+  {name:"Bacillus Spores", cost:2, eff:2, desc:"Spore state improves..."},
+  {name:"Viral Vector", cost:3, eff:3, desc:"Delivery platform..."},
+  {name:"Yeast/Algae", cost:2, eff:2, desc:"Alternative chassis..."},
+  {name:"Resistance", cost:3, eff:3, desc:"Traits that lessen..."},
+  {name:"Persistence", cost:2, eff:2, desc:"Traits that favor survival..."},
+  {name:"Stealth", cost:3, eff:3, desc:"Reduces detection..."},
+  {name:"Weaponization", cost:4, eff:4, desc:"Aligns multiple features..."}
 ];
 
-/* ---------------- COUNTER OPTIONS (with explanations) ---------------- */
 const counterOptions = [
-  {name:"Rapid PCR Assay", cost:2, eff:2, desc:"Targeted diagnostics to confirm presence quickly and guide response."},
-  {name:"Environmental Biosensors", cost:3, eff:3, desc:"Air/water sensing network for early detection and situational awareness."},
-  {name:"Metagenomic Sequencing", cost:4, eff:4, desc:"Broad, hypothesis-free detection for unknown/stealthy signatures."},
-
-  {name:"Antiviral/Antibiotic Stockpile", cost:3, eff:3, desc:"Prepositioned therapeutics to shorten time-to-treatment."},
-  {name:"Monoclonal Antibody Therapy", cost:4, eff:4, desc:"Targeted neutralization; effective when a specific epitope is known."},
-  {name:"Prophylactic Vaccine Development", cost:5, eff:5, desc:"Enables protective immunity pathway; longer lead time but high payoff."},
-
-  {name:"Standard Chlorine Wash", cost:1, eff:1, desc:"Low-cost surface/environment decontamination; broadly useful."},
-  {name:"UV / Heat Treatment", cost:2, eff:2, desc:"Physical inactivation methods; useful where chemical use is constrained."},
-  {name:"AI-Designed Enzymatic Decon", cost:3, eff:3, desc:"Tailored enzymes to degrade/neutralize biological materials."},
-
-  {name:"Upgraded PPE", cost:2, eff:2, desc:"Reduces exposure risk for responders and healthcare settings."},
-  {name:"Improved Ventilation/Filtration", cost:2, eff:2, desc:"Engineering controls to reduce airborne spread and load."},
-  {name:"Strategic Stockpile Logistics", cost:3, eff:3, desc:"Rapid allocation and distribution of resources to points of need."},
-
-  {name:"Rapid Intel Fusion Cell", cost:3, eff:3, desc:"Fuses diagnostic, environmental, and reporting data for faster decisions."},
-  {name:"International Health Reporting", cost:2, eff:2, desc:"Cross-border visibility to spot spread and coordinate measures."},
-  {name:"Public Risk Communication", cost:2, eff:2, desc:"Guidance that improves compliance and reduces harmful behaviors."}
+  {name:"Rapid PCR Assay", cost:2, eff:2, desc:"Targeted diagnostics..."},
+  {name:"Environmental Biosensors", cost:3, eff:3, desc:"Air/water sensing..."},
+  {name:"Metagenomic Sequencing", cost:4, eff:4, desc:"Broad, hypothesis-free..."},
+  {name:"Antiviral/Antibiotic Stockpile", cost:3, eff:3, desc:"Prepositioned..."},
+  {name:"Monoclonal Antibody Therapy", cost:4, eff:4, desc:"Targeted neutralization..."},
+  {name:"Prophylactic Vaccine Development", cost:5, eff:5, desc:"Enables protective immunity..."},
+  {name:"Standard Chlorine Wash", cost:1, eff:1, desc:"Low-cost decon..."},
+  {name:"UV / Heat Treatment", cost:2, eff:2, desc:"Physical inactivation..."},
+  {name:"AI-Designed Enzymatic Decon", cost:3, eff:3, desc:"Tailored enzymes..."},
+  {name:"Upgraded PPE", cost:2, eff:2, desc:"Reduces exposure..."},
+  {name:"Improved Ventilation/Filtration", cost:2, eff:2, desc:"Engineering controls..."},
+  {name:"Strategic Stockpile Logistics", cost:3, eff:3, desc:"Rapid allocation..."},
+  {name:"Rapid Intel Fusion Cell", cost:3, eff:3, desc:"Fuses data..."},
+  {name:"International Health Reporting", cost:2, eff:2, desc:"Cross-border visibility..."},
+  {name:"Public Risk Communication", cost:2, eff:2, desc:"Guidance that improves compliance..."}
 ];
 
 let selThreat = new Set();
 let selCounter = new Set();
 let timerId = null;
 
-/* ----------- RENDERING (mobile-friendly accordions) ----------- */
-function renderOptions(containerId, setRef, powerId, opts){
+function renderOptions(containerId, setRef, powerId, opts, costId){
   const box = document.getElementById(containerId);
   box.innerHTML = "";
   opts.forEach((o, i)=>{
@@ -144,11 +141,11 @@ function renderOptions(containerId, setRef, powerId, opts){
     btn.className = "btn primary";
     btn.textContent = setRef.has(i) ? "Deselect" : "Select";
     btn.onclick = (ev)=>{
-      ev.preventDefault(); // don't toggle the accordion when selecting
+      ev.preventDefault();
       if(setRef.has(i)) setRef.delete(i); else setRef.add(i);
       btn.textContent = setRef.has(i) ? "Deselect" : "Select";
       btn.classList.toggle("sel", setRef.has(i));
-      updatePower(setRef, powerId, opts);
+      updateTotals(setRef, powerId, costId, opts);
     };
     actions.appendChild(btn);
 
@@ -160,30 +157,32 @@ function renderOptions(containerId, setRef, powerId, opts){
     d.appendChild(actions);
     box.appendChild(d);
   });
-  updatePower(setRef, powerId, opts);
+  updateTotals(setRef, powerId, costId, opts);
 }
 
-function updatePower(setRef, powerId, opts){
-  const p = [...setRef].map(j=>opts[j].eff).reduce((a,b)=>a+b,0);
-  document.getElementById(powerId).textContent = p;
+function sum(mapArr){ return mapArr.reduce((a,b)=>a+b,0); }
+
+function updateTotals(setRef, powerId, costId, opts){
+  const power = sum([...setRef].map(j=>opts[j].eff));
+  const cost  = sum([...setRef].map(j=>opts[j].cost));
+  document.getElementById(powerId).textContent = power;
+  document.getElementById(costId).textContent  = cost;
 }
 
-renderOptions("threatOpts", selThreat, "threatPower", threatOptions);
-renderOptions("counterOpts", selCounter, "counterPower", counterOptions);
+renderOptions("threatOpts", selThreat, "threatPower", threatOptions, "threatCost");
+renderOptions("counterOpts", selCounter, "counterPower", counterOptions, "counterCost");
 
-/* ----------- SUBMISSION (unchanged, form-encoded) ----------- */
 async function submitBuild(kind){
   const team  = document.getElementById("team").value.trim();
   const round = document.getElementById("round").value.trim();
-
   const opts   = (kind==="THREAT") ? threatOptions : counterOptions;
   const setRef = (kind==="THREAT") ? selThreat    : selCounter;
 
   const picks = [...setRef].map(i => opts[i].name);
   const power = [...setRef].map(i => opts[i].eff).reduce((a,b)=>a+b,0);
+  const cost  = [...setRef].map(i => opts[i].cost).reduce((a,b)=>a+b,0);
 
-  const payload = { action:"submit", round, team, kind, selections:picks, power };
-  console.log("Submitting payload:", payload);
+  const payload = { action:"submit", round, team, kind, selections:picks, power, cost };
 
   try {
     const resp = await fetch(API_URL, {
@@ -191,16 +190,14 @@ async function submitBuild(kind){
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: "data=" + encodeURIComponent(JSON.stringify(payload))
     });
-    const text = await resp.text();
-    console.log("Server responded:", text);
+    await resp.text();
     alert(`${kind} build submitted!`);
   } catch (err) {
-    console.error("Submission failed", err);
-    alert("Error submitting build. Check console for details.");
+    alert("Error submitting build (check console).");
+    console.error(err);
   }
 }
 
-/* ----------- ROUND STATUS ----------- */
 async function checkRound(){
   const round = document.getElementById("round").value.trim();
   if(!round) return;
@@ -209,7 +206,6 @@ async function checkRound(){
     const data = await res.json();
     document.getElementById("status").textContent =
       `Status: ${data.status} | Threat by: ${data.threat?.team || '—'} | Counter by: ${data.counter?.team || '—'}`;
-
     if(data.remainingSeconds != null){
       document.getElementById("deadlineBox").style.display = "block";
       startCountdown(data.remainingSeconds);
