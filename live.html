@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Live Arena</title>
+  <title>Live Arena (v2)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body{font-family:system-ui,Arial;margin:20px;max-width:900px}
@@ -12,10 +12,11 @@
     .tag{display:inline-block;background:#eef;padding:4px 8px;border-radius:999px;margin-left:8px}
     #whyBox { border:1px solid #ddd; border-radius:10px; padding:14px; margin:14px 0; }
     #whyText { white-space: pre-wrap; line-height: 1.35; }
+    .dim{color:#666}
   </style>
 </head>
 <body>
-  <h1>SynBio Wargame — Live Arena</h1>
+  <h1>SynBio Wargame — Live Arena <span class="tag">v2</span></h1>
   <div class="box">
     <label>Round:
       <input id="round" type="number" value="1" min="1" style="width:80px">
@@ -29,21 +30,26 @@
     <div class="box">
       <h2>Threat Build <span class="tag" id="threatTeam">—</span></h2>
       <div id="threatSelections">—</div>
-      <div>Power: <b id="threatPower">—</b></div>
+      <div>Power: <b id="threatPower">—</b> <span class="dim">| Cost: <b id="threatCost">—</b></span></div>
+      <div class="dim">Final Threat Score: <b id="threatScore">—</b></div>
     </div>
     <div class="box">
       <h2>Counter Build <span class="tag" id="counterTeam">—</span></h2>
       <div id="counterSelections">—</div>
-      <div>Power: <b id="counterPower">—</b></div>
+      <div>Power: <b id="counterPower">—</b> <span class="dim">| Cost: <b id="counterCost">—</b></span></div>
+      <div class="dim">Breakdown: base <b id="cbBase">—</b> + matrix bonus <b id="cbBonus">—</b> + efficiency <b id="effBonus">—</b> + LLM adj <b id="llmAdj">—</b></div>
+      <div class="dim">Final Counter Score: <b id="counterScore">—</b></div>
     </div>
   </div>
-<div id="whyBox" class="box">
-  <h2>Why did this team win?</h2>
-  <div id="whyText">—</div>
-</div>
+
+  <div id="whyBox" class="box">
+    <h2>Why did this team win?</h2>
+    <div id="whyText">—</div>
+  </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbyhsoxL2cRRhoyK4vgXSZt6oX_HunwrCsVTxLqAcEPbEHI86Z0NRmEVcn69knVTmcfI/exec";
+// >>>> IMPORTANT: replace with your deployed Web App URL
+const API_URL = "YOUR_WEB_APP_URL_HERE";
 
 let tId=null;
 
@@ -67,48 +73,54 @@ async function refresh(){
   document.getElementById("threatTeam").textContent       = data.threat?.team || "—";
   document.getElementById("threatSelections").textContent = data.threat?.selections || "—";
   document.getElementById("threatPower").textContent      = data.score?.threatPower ?? data.threat?.power ?? "—";
+  document.getElementById("threatCost").textContent       = data.score?.threatCost ?? data.threat?.cost ?? "—";
+  document.getElementById("threatScore").textContent      = data.score?.threatScore ?? "—";
 
   // ---------- Counter ----------
   document.getElementById("counterTeam").textContent       = data.counter?.team || "—";
   document.getElementById("counterSelections").textContent = data.counter?.selections || "—";
   const base  = data.score?.counterBase;
-  const bonus = data.score?.counterBonus;
-  const fin   = data.score?.counterFinal ?? data.counter?.power ?? "—";
-  document.getElementById("counterPower").textContent =
-    (base!=null && bonus!=null) ? `${fin} (base ${base} + bonus ${bonus})` : fin;
+  const bonus = data.score?.counterBonus; // now = matrix bonus
+  const effTo = data.score?.efficiencyBonusTo;
+  const eff   = data.score?.efficiencyBonus ?? 0;
+  const ladj  = data.score?.llmEfficiencyAdj ?? 0;
+  const fin   = data.score?.counterScore ?? data.counter?.power ?? "—";
+  document.getElementById("counterPower").textContent = base ?? data.counter?.power ?? "—";
+  document.getElementById("counterCost").textContent  = data.score?.counterCost ?? data.counter?.cost ?? "—";
+  document.getElementById("cbBase").textContent       = base ?? "—";
+  document.getElementById("cbBonus").textContent      = bonus ?? 0;
+  document.getElementById("effBonus").textContent     = effTo === (data.counter?.team || "") ? (eff ?? 0) : 0;
+  document.getElementById("llmAdj").textContent       = effTo === (data.counter?.team || "") ? (ladj ?? 0) : 0;
+  document.getElementById("counterScore").textContent = fin;
 
   // ---------- Explanation ----------
-  const tp   = data.score?.threatPower ?? null;
-  const cb   = data.score?.counterBase ?? null;
-  const bon  = data.score?.counterBonus ?? 0;
-  const cf   = data.score?.counterFinal ?? (cb!=null ? (cb + (bon||0)) : null);
+  const ts   = data.score?.threatScore ?? null;
+  const cs   = data.score?.counterScore ?? null;
   const marg = data.score?.margin;
   const win  = data.score?.winner;
+  const effto= data.score?.efficiencyBonusTo;
+  const effb = data.score?.efficiencyBonus ?? 0;
+  const le   = data.score?.llmEfficiencyAdj ?? 0;
 
   let because = "—";
-  if (tp!=null && cf!=null && win) {
+  if (ts!=null && cs!=null && win) {
     const byStr = (typeof marg === "number") ? ` by ${Math.abs(marg)}` : "";
-    const bonusStr = (typeof bon === "number" && bon !== 0)
-      ? ` (base ${cb} + bonus ${bon})`
-      : (cb!=null ? ` (base ${cb})` : "");
-    because = `${win} wins because Counter Final (${cf}${bonusStr}) ${cf >= tp ? "exceeds" : "is below"} Threat Power (${tp})${byStr}.`;
-  } else if (tp!=null && cb!=null) {
-    because = `Threat Power is ${tp}. Counter Base is ${cb}${(bon?`, bonus ${bon}`:'')}. Waiting for full scoring.`;
+    let effline = "";
+    if (effto) effline = ` Efficiency bonus (+${effb}${le?`, LLM adj ${le}`:""}) awarded to ${effto}.`;
+    because = `${win} wins because Counter Score (${cs}) ${cs >= ts ? "exceeds" : "is below"} Threat Score (${ts})${byStr}.${effline}`;
   }
 
   let fullWhy = because;
-
   if (data.score?.explanation) {
-    fullWhy += `\n\nLLM note: ${data.score.explanation}`;
+    fullWhy += `\n\nJudge note: ${data.score.explanation}`;
   }
-  const llmR = data.score?.llm;
+  const llmR = data.score?.llmEfficiency;
   if (llmR && llmR.reason) {
-    fullWhy += `\n\nLLM note: ${llmR.reason} (adj ${llmR.adjustment || 0})`;
+    fullWhy += `\n\nLLM on efficiency: ${llmR.reason} (adj ${llmR.adjustment || 0})`;
   }
 
   document.getElementById("whyText").textContent = fullWhy;
 }
-
 
 function startCountdown(sec){
   stopCountdown();
@@ -132,5 +144,3 @@ refresh();
 
 </body>
 </html>
-
-
