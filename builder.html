@@ -76,36 +76,39 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyhsoxL2cRRhoyK4vgXSZt6
    They include name, cost, eff, desc entries. (Same as before, with descriptions.) */
 
 const threatOptions = [
-  {name:"Protein Designer", cost:2, eff:2, desc:"Designs novel proteins..."},
-  {name:"CRISPR Optimizer", cost:2, eff:2, desc:"Accelerates genome edits..."},
-  {name:"Pathway Simulator", cost:3, eff:3, desc:"Computationally explores..."},
-  {name:"Lab Automation Robot", cost:3, eff:3, desc:"Scales build/test..."},
-  {name:"E. coli", cost:1, eff:1, desc:"Common engineering chassis..."},
-  {name:"Bacillus Spores", cost:2, eff:2, desc:"Spore state improves..."},
-  {name:"Viral Vector", cost:3, eff:3, desc:"Delivery platform..."},
-  {name:"Yeast/Algae", cost:2, eff:2, desc:"Alternative chassis..."},
-  {name:"Resistance", cost:3, eff:3, desc:"Traits that lessen..."},
-  {name:"Persistence", cost:2, eff:2, desc:"Traits that favor survival..."},
-  {name:"Stealth", cost:3, eff:3, desc:"Reduces detection..."},
-  {name:"Weaponization", cost:4, eff:4, desc:"Aligns multiple features..."}
-];
+ {name:"Protein Designer", cost:2, eff:2, desc:"Designs novel proteins that may alter host interaction or stability; increases adaptability and can complicate countermeasure targeting."},
+  {name:"CRISPR Optimizer", cost:2, eff:2, desc:"Accelerates genome edits to tune traits (e.g., fitness, evasion). Raises adaptability pressure for defenders."},
+  {name:"Pathway Simulator", cost:3, eff:3, desc:"Computationally explores metabolic/host pathway effects to maximize impact or persistence."},
+  {name:"Lab Automation Robot", cost:3, eff:3, desc:"Scales build/test throughput and consistency; shortens iteration cycles."},
+  {name:"E. coli", cost:1, eff:1, desc:"Common engineering chassis; easy to culture and test; low baseline robustness."},
+  {name:"Bacillus Spores", cost:2, eff:2, desc:"Spore state improves environmental hardiness and longevity."},
+  {name:"Viral Vector", cost:3, eff:3, desc:"Delivery platform that can increase efficiency of genetic material transfer."},
+  {name:"Yeast/Algae", cost:2, eff:2, desc:"Alternative chassis with environmental reservoirs and distinct growth niches."},
+  {name:"Resistance", cost:3, eff:3, desc:"Traits that lessen susceptibility to medical or decon measures."},
+  {name:"Persistence", cost:2, eff:2, desc:"Traits that favor survival or environmental stability over time."},
+  {name:"Stealth", cost:3, eff:3, desc:"Reduces detection likelihood or delays diagnostic signal."},
+  {name:"Weaponization", cost:4, eff:4, desc:"Aligns multiple features to increase overall impact and operational effectiveness."}
 
 const counterOptions = [
-  {name:"Rapid PCR Assay", cost:2, eff:2, desc:"Targeted diagnostics..."},
-  {name:"Environmental Biosensors", cost:3, eff:3, desc:"Air/water sensing..."},
-  {name:"Metagenomic Sequencing", cost:4, eff:4, desc:"Broad, hypothesis-free..."},
-  {name:"Antiviral/Antibiotic Stockpile", cost:3, eff:3, desc:"Prepositioned..."},
-  {name:"Monoclonal Antibody Therapy", cost:4, eff:4, desc:"Targeted neutralization..."},
-  {name:"Prophylactic Vaccine Development", cost:5, eff:5, desc:"Enables protective immunity..."},
-  {name:"Standard Chlorine Wash", cost:1, eff:1, desc:"Low-cost decon..."},
-  {name:"UV / Heat Treatment", cost:2, eff:2, desc:"Physical inactivation..."},
-  {name:"AI-Designed Enzymatic Decon", cost:3, eff:3, desc:"Tailored enzymes..."},
-  {name:"Upgraded PPE", cost:2, eff:2, desc:"Reduces exposure..."},
-  {name:"Improved Ventilation/Filtration", cost:2, eff:2, desc:"Engineering controls..."},
-  {name:"Strategic Stockpile Logistics", cost:3, eff:3, desc:"Rapid allocation..."},
-  {name:"Rapid Intel Fusion Cell", cost:3, eff:3, desc:"Fuses data..."},
-  {name:"International Health Reporting", cost:2, eff:2, desc:"Cross-border visibility..."},
-  {name:"Public Risk Communication", cost:2, eff:2, desc:"Guidance that improves compliance..."}
+  {name:"Rapid PCR Assay", cost:2, eff:2, desc:"Targeted diagnostics to confirm presence quickly and guide response."},
+  {name:"Environmental Biosensors", cost:3, eff:3, desc:"Air/water sensing network for early detection and situational awareness."},
+  {name:"Metagenomic Sequencing", cost:4, eff:4, desc:"Broad, hypothesis-free detection for unknown/stealthy signatures."},
+
+  {name:"Antiviral/Antibiotic Stockpile", cost:3, eff:3, desc:"Prepositioned therapeutics to shorten time-to-treatment."},
+  {name:"Monoclonal Antibody Therapy", cost:4, eff:4, desc:"Targeted neutralization; effective when a specific epitope is known."},
+  {name:"Prophylactic Vaccine Development", cost:5, eff:5, desc:"Enables protective immunity pathway; longer lead time but high payoff."},
+
+  {name:"Standard Chlorine Wash", cost:1, eff:1, desc:"Low-cost surface/environment decontamination; broadly useful."},
+  {name:"UV / Heat Treatment", cost:2, eff:2, desc:"Physical inactivation methods; useful where chemical use is constrained."},
+  {name:"AI-Designed Enzymatic Decon", cost:3, eff:3, desc:"Tailored enzymes to degrade/neutralize biological materials."},
+
+  {name:"Upgraded PPE", cost:2, eff:2, desc:"Reduces exposure risk for responders and healthcare settings."},
+  {name:"Improved Ventilation/Filtration", cost:2, eff:2, desc:"Engineering controls to reduce airborne spread and load."},
+  {name:"Strategic Stockpile Logistics", cost:3, eff:3, desc:"Rapid allocation and distribution of resources to points of need."},
+
+  {name:"Rapid Intel Fusion Cell", cost:3, eff:3, desc:"Fuses diagnostic, environmental, and reporting data for faster decisions."},
+  {name:"International Health Reporting", cost:2, eff:2, desc:"Cross-border visibility to spot spread and coordinate measures."},
+  {name:"Public Risk Communication", cost:2, eff:2, desc:"Guidance that improves compliance and reduces harmful behaviors."}
 ];
 
 let selThreat = new Set();
@@ -236,4 +239,5 @@ function updateCountdown(s){
 </script>
 </body>
 </html>
+
 
